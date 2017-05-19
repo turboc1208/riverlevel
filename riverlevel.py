@@ -1,8 +1,8 @@
-import my_appapi as appapi
+import appdaemon.appapi as appapi
 import urllib.request
 import json
              
-class riverlevel(appapi.my_appapi):
+class riverlevel(appapi.AppDaemon):
 
   def initialize(self):
     # self.LOGLEVEL="DEBUG"
