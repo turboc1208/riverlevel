@@ -27,4 +27,6 @@ controlname=sensor.river_mem
 stationid=07032000
 country=US
 </pre>
-
+<p>
+US data retrieved from : https://waterservices.usgs.gov/rest/IV-Service.html
+UK data retrieved from : http://environment.data.gov.uk/flood-monitoring/doc/reference
