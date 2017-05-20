@@ -36,10 +36,13 @@ class riverlevel(appapi.AppDaemon):
       jd=json.loads(data.decode("utf-8"))
       if "latestReading" in jd["items"]["measures"]:
         newlevel=jd["items"]["measures"]["latestReading"]["value"]
+        lastReading=jd["items"]["measures"]["latestReading"]["dateTime"]
       else:
         newlevel=jd["items"]["measures"][0]["latestReading"]["value"] 
-      lat=0.0
-      lon=0.0 
+        lastReading=jd["items"]["measures"][0]["latestReading"]["dateTime"]
+      lat=jd["items"]["lat"]
+      lon=jd["items"]["long"]
+      stage_datum=jd["items"]["stageScale"]["datum"]
     elif self.country=="US":
       url="https://waterservices.usgs.gov/nwis/iv/?format=json&sites={}&parameterCd=00060,00065&siteStatus=all".format(self.stationid)
       self.log("us url={}".format(url))
@@ -49,8 +52,10 @@ class riverlevel(appapi.AppDaemon):
         if ts["variable"]["variableCode"][0]["variableID"]==45807202:
           lat=ts["sourceInfo"]["geoLocation"]["geogLocation"]["latitude"]
           lon=ts["sourceInfo"]["geoLocation"]["geogLocation"]["longitude"]
+          lastReading=ts["values"][0]["value"][0]["dateTime"]
+          stage_datum="unk"
           newlevel=ts["values"][0]["value"][0]["value"]
           break
 
     self.log("River Level {} ={}".format(self.stationid,newlevel))
-    self.set_state(self.control_name,state=newlevel,attributes={"name":self.stationid,"latitude":lat,"longitude":lon})   
+    self.set_state(self.control_name,state=newlevel,attributes={"name":self.stationid,"latitude":lat,"longitude":lon,"lastReading":lastReading, "stage_datum":stage_datum})   
