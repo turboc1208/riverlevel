@@ -24,6 +24,12 @@ class riverlevel(appapi.AppDaemon):
     else:
       self.country="US"
       self.log("set default country={}".format(self.country))
+    if "rivername" in self.args:
+      self.log("river name={}".format(self.args["rivername"]))
+      self.rivername=self.args["rivername"]
+    else:
+      self.rivername=self.stationid
+
     self.log("riverlevel App")
     self.run_every(self.timer_handler,self.datetime(),60*self.interval)
 
@@ -46,7 +52,11 @@ class riverlevel(appapi.AppDaemon):
     elif self.country=="US":
       url="https://waterservices.usgs.gov/nwis/iv/?format=json&sites={}&parameterCd=00060,00065&siteStatus=all".format(self.stationid)
       self.log("us url={}".format(url))
-      data=urllib.request.urlopen(url).read()
+      try:
+        data=urllib.request.urlopen(url).read()
+      except:
+        self.log("Error reading url = {}".format(url))
+        return
       jd=json.loads(data.decode("utf-8"))
       for ts in jd["value"]["timeSeries"]:
         if ts["variable"]["variableCode"][0]["variableID"]==45807202:
@@ -58,4 +68,4 @@ class riverlevel(appapi.AppDaemon):
           break
 
     self.log("River Level {} ={}".format(self.stationid,newlevel))
-    self.set_state(self.control_name,state=newlevel,attributes={"name":self.stationid,"latitude":lat,"longitude":lon,"lastReading":lastReading, "stage_datum":stage_datum})   
+    self.set_state(self.control_name,state=newlevel,attributes={"name":self.rivername,"stationID":self.stationid,"latitude":lat,"longitude":lon,"lastReading":lastReading, "stage_datum":stage_datum})   
