@@ -1,11 +1,14 @@
-import appdaemon.appapi as appapi
+import appdaemon.plugins.hass.hassapi as hass
+import datetime
+import time
 import urllib.request
 import json
              
-class riverlevel(appapi.AppDaemon):
+class riverlevel(hass.Hass):
 
   def initialize(self):
     # self.LOGLEVEL="DEBUG"
+    self.log("riverlevel app")
     if "stationid" in self.args:
       self.stationid=self.args["stationid"]
     else:
@@ -30,8 +33,8 @@ class riverlevel(appapi.AppDaemon):
     else:
       self.rivername=self.stationid
 
-    self.log("riverlevel App")
     self.run_every(self.timer_handler,self.datetime(),60*self.interval)
+    self.log("initialization complete")
 
   def timer_handler(self,kwargs):
     self.log("self.country={}".format(self.country))
