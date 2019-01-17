@@ -71,4 +71,4 @@ class riverlevel(hass.Hass):
           break
 
     self.log("River Level {} ={}".format(self.stationid,newlevel))
-    self.set_state(self.control_name,state=newlevel,attributes={"name":self.rivername,"stationID":self.stationid,"latitude":lat,"longitude":lon,"lastReading":lastReading, "stage_datum":stage_datum})   
+    self.set_state(self.control_name,state=float(newlevel),attributes={"name":self.rivername,"stationID":self.stationid,"latitude":lat,"longitude":lon,"lastReading":lastReading, "stage_datum":stage_datum, "unit_of_measurement":"ft"})   
