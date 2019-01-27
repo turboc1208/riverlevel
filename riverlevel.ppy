@@ -1,0 +1,77 @@
+import appdaemon.plugins.hass.hassapi as hass
+import datetime
+import time
+import urllib.request
+import json
+m4_include(/home/appdaemon/code/appdaemon/adlib_imports.pyi)
+             
+class riverlevel(hass.Hass):
+
+  def initialize(self):
+    # self.LOGLEVEL="DEBUG"
+    self.log("riverlevel app")
+    if "stationid" in self.args:
+      self.stationid=self.args["stationid"]
+    else:
+      self.log("stationid must be set in ap./ha	pdaemon.cfg file")
+    if "interval" in self.args:
+      self.interval=self.args["interval"]
+    else:
+      self.interval=7
+    if "controlname" in self.args:
+      self.control_name=self.args["controlname"]
+    else:  
+      self.control_name="sensor.river_level"
+    if "country" in self.args:
+      self.log("country in appdaemon.cfg={}".format(self.args["country"]))
+      self.country=self.args["country"]
+    else:
+      self.country="US"
+      self.log("set default country={}".format(self.country))
+    if "rivername" in self.args:
+      self.log("river name={}".format(self.args["rivername"]))
+      self.rivername=self.args["rivername"]
+    else:
+      self.rivername=self.stationid
+
+    self.run_every(self.timer_handler,self.now(),60*self.interval)
+    self.log("initialization complete")
+
+  def timer_handler(self,kwargs):
+    self.log("self.country={}".format(self.country))
+    if self.country=="UK":
+      url=str("http://environment.data.gov.uk/flood-monitoring/id/stations/{}".format(self.stationid))
+      self.log("uk url={}".format(url))
+      data=urllib.request.urlopen(url).read()
+      jd=json.loads(data.decode("utf-8"))
+      if "latestReading" in jd["items"]["measures"]:
+        newlevel=jd["items"]["measures"]["latestReading"]["value"]
+        lastReading=jd["items"]["measures"]["latestReading"]["dateTime"]
+      else:
+        newlevel=jd["items"]["measures"][0]["latestReading"]["value"] 
+        lastReading=jd["items"]["measures"][0]["latestReading"]["dateTime"]
+      lat=jd["items"]["lat"]
+      lon=jd["items"]["long"]
+      stage_datum=jd["items"]["stageScale"]["datum"]
+    elif self.country=="US":
+      url="https://waterservices.usgs.gov/nwis/iv/?format=json&sites={}&parameterCd=00060,00065&siteStatus=all".format(self.stationid)
+      self.log("us url={}".format(url))
+      try:
+        data=urllib.request.urlopen(url).read()
+      except:
+        self.log("Error reading url = {}".format(url))
+        return
+      jd=json.loads(data.decode("utf-8"))
+      for ts in jd["value"]["timeSeries"]:
+        if ts["variable"]["variableCode"][0]["variableID"]==45807202:
+          lat=ts["sourceInfo"]["geoLocation"]["geogLocation"]["latitude"]
+          lon=ts["sourceInfo"]["geoLocation"]["geogLocation"]["longitude"]
+          lastReading=ts["values"][0]["value"][0]["dateTime"]
+          stage_datum="unk"
+          newlevel=ts["values"][0]["value"][0]["value"]
+          break
+
+    self.log("River Level {} ={}".format(self.stationid,newlevel))
+    self.set_state(self.control_name,state=float(newlevel),attributes={"name":self.rivername,"stationID":self.stationid,"latitude":lat,"longitude":lon,"lastReading":lastReading, "stage_datum":stage_datum, "unit_of_measurement":"ft"})   
+
+m4_include(/home/appdaemon/code/appdaemon/adlib.pyi)
